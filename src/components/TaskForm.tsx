@@ -21,6 +21,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
   const [dueDate, setDueDate] = useState(
     task?.dueDate ? task.dueDate.toISOString().split('T')[0] : ''
   );
+  const [dueTime, setDueTime] = useState(
+    task?.dueDate ? task.dueDate.toTimeString().slice(0, 5) : ''
+  );
   const [category, setCategory] = useState<TaskCategory>(task?.category || 'school');
   const [priority, setPriority] = useState<TaskPriority>(task?.priority || 'medium');
 
@@ -29,10 +32,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
     
     if (!title.trim() || !dueDate) return;
     
+    // Combine date and time
+    const dueDateTimeString = dueTime ? `${dueDate}T${dueTime}` : `${dueDate}T23:59`;
+    const combinedDueDate = new Date(dueDateTimeString);
+    
     onSave({
       title: title.trim(),
       description: description.trim(),
-      dueDate: new Date(dueDate),
+      dueDate: combinedDueDate,
       category,
       priority,
       completed: task?.completed || false,
@@ -44,7 +51,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
       <Card className="glass-effect w-full max-w-md animate-scale-in">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold gradient-primary bg-clip-text text-transparent">
+            <h2 className="text-xl font-semibold text-primary">
               {task ? 'Edit Task' : 'Create New Task'}
             </h2>
             <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -86,6 +93,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
                 onChange={(e) => setDueDate(e.target.value)}
                 className="mt-1"
                 required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="dueTime">Due Time (optional)</Label>
+              <Input
+                id="dueTime"
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+                className="mt-1"
+                placeholder="Select time..."
               />
             </div>
             

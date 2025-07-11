@@ -60,6 +60,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleCom
     return 'text-blue-400';
   };
 
+  const formatDueDateTime = () => {
+    const dateStr = format(task.dueDate, 'MMM dd, yyyy');
+    const timeStr = format(task.dueDate, 'HH:mm');
+    
+    // Check if time is set to default (23:59) or actual time
+    if (timeStr === '23:59') {
+      return dateStr;
+    }
+    return `${dateStr} at ${timeStr}`;
+  };
+
   return (
     <Card 
       className={getCardClasses()}
@@ -104,7 +115,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleCom
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>{format(task.dueDate, 'MMM dd, yyyy')}</span>
+            <span>{formatDueDateTime()}</span>
           </div>
           
           <div className="flex items-center space-x-2">
