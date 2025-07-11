@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 import { Task } from '../types/Task';
@@ -9,30 +8,39 @@ import TaskStats from '../components/TaskStats';
 import TaskFilter from '../components/TaskFilter';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [activeFilter, setActiveFilter] = useState('all');
 
+  // Create user-specific localStorage key
+  const getStorageKey = () => `study-tasks-${user?.id}`;
+
   // Load tasks from localStorage on component mount
   useEffect(() => {
-    const savedTasks = localStorage.getItem('study-tasks');
-    if (savedTasks) {
-      const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
-        ...task,
-        dueDate: new Date(task.dueDate),
-        createdAt: new Date(task.createdAt),
-      }));
-      setTasks(parsedTasks);
+    if (user) {
+      const savedTasks = localStorage.getItem(getStorageKey());
+      if (savedTasks) {
+        const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
+          ...task,
+          dueDate: new Date(task.dueDate),
+          createdAt: new Date(task.createdAt),
+        }));
+        setTasks(parsedTasks);
+      }
     }
-  }, []);
+  }, [user]);
 
   // Save tasks to localStorage whenever tasks change
   useEffect(() => {
-    localStorage.setItem('study-tasks', JSON.stringify(tasks));
-  }, [tasks]);
+    if (user) {
+      localStorage.setItem(getStorageKey(), JSON.stringify(tasks));
+    }
+  }, [tasks, user]);
 
   const handleSaveTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
     if (editingTask) {
@@ -148,17 +156,13 @@ const Index = () => {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Welcome Message */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Sparkles className="h-8 w-8 text-primary mr-3" />
-            <h1 className="text-4xl md:text-5xl font-bold gradient-primary bg-clip-text text-transparent">
-              StudyFlow
-            </h1>
-            <Sparkles className="h-8 w-8 text-accent ml-3" />
-          </div>
+          <h2 className="text-3xl md:text-4xl font-bold mb-2">
+            Welcome to your workspace! ✨
+          </h2>
           <p className="text-lg text-muted-foreground">
-            Master your time, ace your goals ✨
+            Master your time, ace your goals
           </p>
         </div>
 
