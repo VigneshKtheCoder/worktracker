@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 import { Task } from '../types/Task';
-import { differenceInDays, isPast, isToday, startOfWeek, isAfter } from 'date-fns';
+import { differenceInDays, isPast, isToday } from 'date-fns';
 import TaskCard from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import TaskStats from '../components/TaskStats';
@@ -19,7 +19,6 @@ const Index = () => {
   // Load tasks from localStorage on component mount
   useEffect(() => {
     const savedTasks = localStorage.getItem('study-tasks');
-    const lastResetDate = localStorage.getItem('last-reset-date');
     
     if (savedTasks) {
       const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
@@ -27,26 +26,7 @@ const Index = () => {
         dueDate: new Date(task.dueDate),
         createdAt: new Date(task.createdAt),
       }));
-      
-      // Check if we need to reset completed tasks (weekly reset)
-      const currentWeekStart = startOfWeek(new Date());
-      const lastReset = lastResetDate ? new Date(lastResetDate) : null;
-      
-      if (!lastReset || isAfter(currentWeekStart, lastReset)) {
-        // Reset completed tasks
-        const activeTasks = parsedTasks.filter((task: Task) => !task.completed);
-        setTasks(activeTasks);
-        localStorage.setItem('last-reset-date', currentWeekStart.toISOString());
-        
-        if (lastReset && parsedTasks.some((task: Task) => task.completed)) {
-          toast({
-            title: "Weekly Reset Complete! ✨",
-            description: "Completed tasks have been cleared for a fresh start this week.",
-          });
-        }
-      } else {
-        setTasks(parsedTasks);
-      }
+      setTasks(parsedTasks);
     }
   }, []);
 
@@ -115,6 +95,23 @@ const Index = () => {
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setShowForm(true);
+  };
+
+  const handleClearCompleted = () => {
+    const completedTasks = tasks.filter(task => task.completed);
+    if (completedTasks.length === 0) {
+      toast({
+        title: "No Completed Tasks",
+        description: "There are no completed tasks to clear.",
+      });
+      return;
+    }
+
+    setTasks(tasks.filter(task => !task.completed));
+    toast({
+      title: "Completed Tasks Cleared! 🗑️",
+      description: `Removed ${completedTasks.length} completed task${completedTasks.length === 1 ? '' : 's'}.`,
+    });
   };
 
   const getFilteredTasks = () => {
@@ -205,6 +202,7 @@ const Index = () => {
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
           taskCounts={taskCounts}
+          onClearCompleted={handleClearCompleted}
         />
 
         {/* Tasks Grid */}

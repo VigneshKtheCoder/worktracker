@@ -2,11 +2,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { GraduationCap, User, CheckCircle2, Clock, AlertTriangle, List } from 'lucide-react';
+import { GraduationCap, User, CheckCircle2, Clock, AlertTriangle, List, Trash2 } from 'lucide-react';
 
 interface TaskFilterProps {
   activeFilter: string;
   onFilterChange: (filter: string) => void;
+  onClearCompleted: () => void;
   taskCounts: {
     all: number;
     school: number;
@@ -18,7 +19,12 @@ interface TaskFilterProps {
   };
 }
 
-const TaskFilter: React.FC<TaskFilterProps> = ({ activeFilter, onFilterChange, taskCounts }) => {
+const TaskFilter: React.FC<TaskFilterProps> = ({ 
+  activeFilter, 
+  onFilterChange, 
+  onClearCompleted,
+  taskCounts 
+}) => {
   const filters = [
     { key: 'all', label: 'All Tasks', icon: List, count: taskCounts.all },
     { key: 'school', label: 'School', icon: GraduationCap, count: taskCounts.school },
@@ -30,31 +36,46 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ activeFilter, onFilterChange, t
   ];
 
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
-      {filters.map((filter) => (
-        <Button
-          key={filter.key}
-          variant={activeFilter === filter.key ? "default" : "outline"}
-          size="sm"
-          onClick={() => onFilterChange(filter.key)}
-          className={`relative ${
-            activeFilter === filter.key 
-              ? 'gradient-primary text-white' 
-              : 'glass-effect hover:bg-primary/10'
-          }`}
-        >
-          <filter.icon className="h-4 w-4 mr-2" />
-          {filter.label}
-          {filter.count > 0 && (
-            <Badge 
-              variant="secondary" 
-              className="ml-2 text-xs px-1.5 py-0.5 min-w-[1.25rem] h-5"
-            >
-              {filter.count}
-            </Badge>
-          )}
-        </Button>
-      ))}
+    <div className="flex justify-center mb-6">
+      <div className="flex flex-wrap gap-2 items-center">
+        {filters.map((filter) => (
+          <Button
+            key={filter.key}
+            variant={activeFilter === filter.key ? "default" : "outline"}
+            size="sm"
+            onClick={() => onFilterChange(filter.key)}
+            className={`relative ${
+              activeFilter === filter.key 
+                ? 'gradient-primary text-white' 
+                : 'glass-effect hover:bg-primary/10'
+            }`}
+          >
+            <filter.icon className="h-4 w-4 mr-2" />
+            {filter.label}
+            {filter.count > 0 && (
+              <Badge 
+                variant="secondary" 
+                className="ml-2 text-xs px-1.5 py-0.5 min-w-[1.25rem] h-5"
+              >
+                {filter.count}
+              </Badge>
+            )}
+          </Button>
+        ))}
+        
+        {/* Clear Completed Button */}
+        {taskCounts.completed > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearCompleted}
+            className="glass-effect hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear Completed
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
