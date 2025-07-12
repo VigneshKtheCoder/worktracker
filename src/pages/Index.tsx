@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 import { Task } from '../types/Task';
-import { differenceInDays, isPast, isToday } from 'date-fns';
+import { differenceInDays, isPast, isToday, startOfWeek, isAfter } from 'date-fns';
 import TaskCard from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import TaskStats from '../components/TaskStats';
@@ -19,13 +19,34 @@ const Index = () => {
   // Load tasks from localStorage on component mount
   useEffect(() => {
     const savedTasks = localStorage.getItem('study-tasks');
+    const lastResetDate = localStorage.getItem('last-reset-date');
+    
     if (savedTasks) {
       const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
         ...task,
         dueDate: new Date(task.dueDate),
         createdAt: new Date(task.createdAt),
       }));
-      setTasks(parsedTasks);
+      
+      // Check if we need to reset completed tasks (weekly reset)
+      const currentWeekStart = startOfWeek(new Date());
+      const lastReset = lastResetDate ? new Date(lastResetDate) : null;
+      
+      if (!lastReset || isAfter(currentWeekStart, lastReset)) {
+        // Reset completed tasks
+        const activeTasks = parsedTasks.filter((task: Task) => !task.completed);
+        setTasks(activeTasks);
+        localStorage.setItem('last-reset-date', currentWeekStart.toISOString());
+        
+        if (lastReset && parsedTasks.some((task: Task) => task.completed)) {
+          toast({
+            title: "Weekly Reset Complete! ✨",
+            description: "Completed tasks have been cleared for a fresh start this week.",
+          });
+        }
+      } else {
+        setTasks(parsedTasks);
+      }
     }
   }, []);
 
@@ -99,9 +120,9 @@ const Index = () => {
   const getFilteredTasks = () => {
     switch (activeFilter) {
       case 'school':
-        return tasks.filter(task => task.category === 'school');
+        return tasks.filter(task => task.category === 'school' && !task.completed);
       case 'personal':
-        return tasks.filter(task => task.category === 'personal');
+        return tasks.filter(task => task.category === 'personal' && !task.completed);
       case 'completed':
         return tasks.filter(task => task.completed);
       case 'pending':
@@ -116,8 +137,10 @@ const Index = () => {
         return tasks.filter(task => 
           !task.completed && isPast(task.dueDate) && !isToday(task.dueDate)
         );
+      case 'all':
+        return tasks.filter(task => !task.completed); // Hide completed tasks from "All Tasks"
       default:
-        return tasks;
+        return tasks.filter(task => !task.completed);
     }
   };
 
@@ -132,9 +155,9 @@ const Index = () => {
     );
 
     return {
-      all: tasks.length,
-      school: tasks.filter(task => task.category === 'school').length,
-      personal: tasks.filter(task => task.category === 'personal').length,
+      all: pendingTasks.length, // Only count pending tasks for "All Tasks"
+      school: tasks.filter(task => task.category === 'school' && !task.completed).length,
+      personal: tasks.filter(task => task.category === 'personal' && !task.completed).length,
       completed: tasks.filter(task => task.completed).length,
       pending: pendingTasks.length,
       dueSoon: dueSoonTasks.length,
@@ -153,7 +176,7 @@ const Index = () => {
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="h-8 w-8 text-primary mr-3" />
             <h1 className="text-4xl md:text-5xl font-bold text-primary">
-              WorkTracker
+              Grindr
             </h1>
             <Sparkles className="h-8 w-8 text-accent ml-3" />
           </div>
