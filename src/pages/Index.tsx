@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Trophy } from 'lucide-react';
 import { Task } from '../types/Task';
 import { differenceInDays, isPast, isToday } from 'date-fns';
 import TaskCard from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import TaskStats from '../components/TaskStats';
 import TaskFilter from '../components/TaskFilter';
+import Awards from '../components/Awards';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 
@@ -15,10 +16,13 @@ const Index = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [activeFilter, setActiveFilter] = useState('all');
+  const [showAwards, setShowAwards] = useState(false);
+  const [totalCompleted, setTotalCompleted] = useState(0);
 
-  // Load tasks from localStorage on component mount
+  // Load tasks and total completed from localStorage on component mount
   useEffect(() => {
     const savedTasks = localStorage.getItem('study-tasks');
+    const savedTotalCompleted = localStorage.getItem('total-completed-tasks');
     
     if (savedTasks) {
       const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
@@ -27,6 +31,10 @@ const Index = () => {
         createdAt: new Date(task.createdAt),
       }));
       setTasks(parsedTasks);
+    }
+    
+    if (savedTotalCompleted) {
+      setTotalCompleted(parseInt(savedTotalCompleted, 10));
     }
   }, []);
 
@@ -75,21 +83,30 @@ const Index = () => {
   };
 
   const handleToggleComplete = (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    
+    const wasCompleted = task.completed;
+    
     setTasks(tasks.map(task => 
       task.id === id 
         ? { ...task, completed: !task.completed }
         : task
     ));
     
-    const task = tasks.find(t => t.id === id);
-    if (task) {
-      toast({
-        title: task.completed ? "Task Reopened" : "Task Completed! 🎉",
-        description: task.completed 
-          ? "Task has been marked as incomplete." 
-          : "Great job on completing your task!",
-      });
+    // Update total completed count
+    if (!wasCompleted) {
+      const newTotal = totalCompleted + 1;
+      setTotalCompleted(newTotal);
+      localStorage.setItem('total-completed-tasks', newTotal.toString());
     }
+    
+    toast({
+      title: wasCompleted ? "Task Reopened" : "Task Completed! 🎉",
+      description: wasCompleted 
+        ? "Task has been marked as incomplete." 
+        : "Great job on completing your task!",
+    });
   };
 
   const handleEditTask = (task: Task) => {
@@ -169,7 +186,16 @@ const Index = () => {
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="relative text-center mb-8">
+          <Button
+            onClick={() => setShowAwards(true)}
+            variant="outline"
+            size="icon"
+            className="absolute top-0 right-0 hover:bg-primary/10 hover:scale-110 transition-all duration-300"
+          >
+            <Trophy className="h-5 w-5 text-primary" />
+          </Button>
+          
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="h-8 w-8 text-primary mr-3" />
             <h1 className="text-4xl md:text-5xl font-bold text-primary">
@@ -253,6 +279,13 @@ const Index = () => {
             }}
           />
         )}
+
+        {/* Awards Modal */}
+        <Awards
+          isOpen={showAwards}
+          onClose={() => setShowAwards(false)}
+          totalCompleted={totalCompleted}
+        />
       </div>
     </div>
   );
